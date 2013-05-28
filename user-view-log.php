@@ -2,7 +2,7 @@
 /**
 Plugin Name: User View Log
 Plugin URI: https://github.com/ethanpil/user-view-log
-Description: Wordpress plugin to track what posts and pages a logged in user has seen on the frontend. Does not track visitors who are not logged in. Only tracks views of pages and singles.
+Description: Track what posts and pages a logged in user has seen on the frontend. Does not track visitors who are not logged in. Only tracks views of pages and singles.
 Version: 1.0
 Author: Store Machine Inc.
 Author URI: http://storemachine.com
@@ -13,10 +13,10 @@ Text Domain: user-view-log
 
 ## Setuo the data table on plugin install
 
-function uspy_install () {
+function user_view_log_install () {
    global $wpdb;
 
-   $table_name = $wpdb->prefix . "user_spy"; 
+   $table_name = $wpdb->prefix . "user_view_log"; 
    
 	$sql = "CREATE TABLE $table_name (
 		id mediumint(9) NOT NULL AUTO_INCREMENT,
@@ -34,29 +34,29 @@ function uspy_install () {
 	dbDelta( $sql ); 
 	
 }
-register_activation_hook( __FILE__, 'uspy_install' );
+register_activation_hook( __FILE__, 'user_view_log_install' );
 
 
 ## Create the virtual page to receive JavaScript view and add to db 
 
 
-add_action( 'init', 'uspy_rewrite_setup' );
-function uspy_rewrite_setup()
+add_action( 'init', 'user_view_log_rewrite_setup' );
+function user_view_log_rewrite_setup()
 {
     add_rewrite_rule( 'track-view.php$', 'index.php?track-view=1', 'top' );
 }
 
 
-add_filter( 'query_vars', 'uspy_query_vars' );
-function uspy_query_vars( $query_vars )
+add_filter( 'query_vars', 'user_view_log_query_vars' );
+function user_view_log_query_vars( $query_vars )
 {
     $query_vars[] = 'track-view';
     return $query_vars;
 }
 
 
-add_action( 'parse_request', 'uspy_parse_tracking_request' );
-function uspy_parse_tracking_request( &$wp )
+add_action( 'parse_request', 'user_view_log_parse_tracking_request' );
+function user_view_log_parse_tracking_request( &$wp )
 {	
 	if ( array_key_exists( 'track-view', $wp->query_vars ) ) {
 	//We have recieved a request to the virtual page	
@@ -65,7 +65,7 @@ function uspy_parse_tracking_request( &$wp )
 		global $wpdb;		
 		$wpdb->query( $wpdb->prepare( 
 			"
-				INSERT INTO ".$wpdb->prefix."user_spy
+				INSERT INTO ".$wpdb->prefix."user_view_log
 				( user_id, post_id, post_type, slug, time )
 				VALUES ( %d, %d, %s, %s, %s )
 			", 
@@ -86,7 +86,7 @@ function uspy_parse_tracking_request( &$wp )
 
 ## Register the JS in page footer which will make the AJAX call to track the view..
 ### We use JavaScript so that caching plugins will still operate transparently.
-function uspy_track_view_js() {
+function user_view_log_track_view_js() {
 
 	if ( !is_admin() && is_user_logged_in() && (is_single() || is_page() ) ) {
 		$current_user = wp_get_current_user();
@@ -106,10 +106,10 @@ function uspy_track_view_js() {
 		<?php
 	}
 }
-add_action( 'wp_footer', 'uspy_track_view_js' );
+add_action( 'wp_footer', 'user_view_log_track_view_js' );
 
 
-/* Delete duplicates
+/* Delete duplicates for future version
 
  DELETE from wp_user_spy where id in 
 	( select id from 
@@ -154,7 +154,7 @@ function user_has_viewed($post_id = NULL) {
 		global $wpdb;
 		$result = $wpdb->query( $wpdb->prepare( 
 			"
-				SELECT id FROM ".$wpdb->prefix."user_spy
+				SELECT id FROM ".$wpdb->prefix."user_view_log
 				WHERE user_id = %d
 				AND post_id = %d
 			", 
@@ -185,7 +185,7 @@ function users_who_viewed($post_id = NULL) {
 		global $wpdb;
 		$result = $wpdb->query( $wpdb->prepare( 
 			"
-				SELECT user_id FROM ".$wpdb->prefix."user_spy
+				SELECT user_id FROM ".$wpdb->prefix."user_view_log
 				WHERE post_id = %d
 				GROUP_BY user_id
 			", 
