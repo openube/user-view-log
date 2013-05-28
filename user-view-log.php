@@ -88,7 +88,7 @@ function user_view_log_parse_tracking_request( &$wp )
 ### We use JavaScript so that caching plugins will still operate transparently.
 function user_view_log_track_view_js() {
 
-	if ( !is_admin() && is_user_logged_in() && (is_single() || is_page() ) ) {
+	if ( !is_admin() && is_user_logged_in() && (is_single() || is_page() ) && wp_script_is('jquery') ) {
 		$current_user = wp_get_current_user();
 		
 		wp_reset_query();
@@ -96,12 +96,7 @@ function user_view_log_track_view_js() {
 		
 		?>
 		<script type="text/javascript">
-		  if ( undefined !== window.jQuery ) {
-			// script dependent on jQuery
-			  jQuery(document).ready(function($) {
-				$.post("/track-view.php", { user_id: "<?php echo $current_user->ID; ?>", post_id: "<?php echo $wp_query->post->ID; ?>", post_type: "<?php echo $wp_query->post->post_type; ?>", slug: "<?php echo get_the_slug($wp_query->post->ID); ?>"});
-			  });	
-		  }
+			$.post("/track-view.php", { user_id: "<?php echo $current_user->ID; ?>", post_id: "<?php echo $wp_query->post->ID; ?>", post_type: "<?php echo $wp_query->post->post_type; ?>", slug: "<?php echo get_the_slug($wp_query->post->ID); ?>"});
 		</script>
 		<?php
 	}
